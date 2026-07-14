@@ -6,40 +6,77 @@
     <title>ヤギヤギ詐欺体験・完全版</title>
     <style>
         html, body { margin: 0; min-height: 100vh; background-color: #000; color: #fff; font-family: "Helvetica Neue", Arial, sans-serif; }
-        body { text-align: center; padding: 20px 16px; display: flex; flex-direction: column; box-sizing: border-box; }
+        /* bodyをFlexboxにして、中身を縦に並べる */
+        body { 
+            text-align: center; 
+            padding: 20px 16px; 
+            display: flex; 
+            flex-direction: column; 
+            box-sizing: border-box; 
+            min-height: 100vh;
+        }
+
+        /* ここが重要：.screen（物語部分）が残りのスペースを自動で埋める */
+        .screen { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            width: 100%;
+        }
+
         button { font-size: 1.2rem; padding: 16px; margin: 10px auto; width: min(100%, 520px); background-color: #222; color: #fff; border: 2px solid #fff; border-radius: 14px; cursor: pointer; touch-action: manipulation; }
-        .screen { width: 100%; }
         .hidden { display: none !important; }
         #info-text { white-space: pre-wrap; text-align: left; max-width: 760px; margin: 0 auto 20px; line-height: 1.6; }
         .button-group { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+
+        /* フッターのスタイル */
+        footer {
+            margin-top: 40px;
+            padding: 20px 0;
+            font-size: 0.75rem;
+            color: #888;
+            flex-shrink: 0; /* フッターは縮まないようにする */
+        }
+        footer a { color: #aaa; text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
-    <div id="setup-screen" class="screen">
-        <h1>ヤギヤギ詐欺</h1>
-        <button id="start-btn">パンドラの箱を開ける</button>
-    </div>
-
-    <div id="incoming-screen" class="screen hidden">
-        <h1>非通知からの電話</h1>
-        <button id="answer-btn">応答する</button>
-    </div>
-
-    <div id="monologue-screen" class="screen hidden">
-        <h1>...通話終了</h1>
-        <p id="monologue-text"></p>
-        <div class="button-group">
-            <button id="choice1-btn">① 羊と山羊の違いはわかっている</button>
-            <button id="choice2-btn">② 羊と山羊の違い、実は微妙</button>
+    <main>
+        <div id="setup-screen" class="screen">
+            <h1>ヤギヤギ詐欺</h1>
+            <button id="start-btn">パンドラの箱を開ける</button>
         </div>
-    </div>
 
-    <div id="info-screen" class="screen hidden">
-        <h1 id="info-title"></h1>
-        <div id="info-text"></div>
-        <div id="button-container" class="button-group"></div>
-    </div>
+        <div id="incoming-screen" class="screen hidden">
+            <h1>非通知からの電話</h1>
+            <button id="answer-btn">応答する</button>
+        </div>
+
+        <div id="monologue-screen" class="screen hidden">
+            <h1>...通話終了</h1>
+            <p id="monologue-text"></p>
+            <div class="button-group">
+                <button id="choice1-btn">① 羊と山羊の違いはわかっている</button>
+                <button id="choice2-btn">② 羊と山羊の違い、実は微妙</button>
+            </div>
+        </div>
+
+        <div id="info-screen" class="screen hidden">
+            <h1 id="info-title"></h1>
+            <div id="info-text"></div>
+            <div id="button-container" class="button-group"></div>
+        </div>
+    </main>
+
+    <footer>
+        Thanks：<a href="https://soundeffect-lab.info/" target="_blank">効果音ラボ</a> ｜ 
+        <a href="https://otologic.jp/free/license.html" target="_blank">OtoLogic</a> ｜ 
+        <a href="https://sites.google.com/view/narihisa/" target="_blank">風兎窯</a><br>
+        (C) 2026 同行援護事業所みつき栃木 All Rights Reserved
+    </footer>
 
     <script>
         const callAudio = new Audio('audio/audiocall.mp3');
@@ -65,7 +102,7 @@
                 u.lang = 'ja-JP';
                 u.rate = rate;
                 u.pitch = pitch;
-                u.onend = () => { i++; setTimeout(playNext, 100); }; // セリフ間に少し間隔を置く
+                u.onend = () => { i++; setTimeout(playNext, 100); };
                 window.speechSynthesis.speak(u);
             }
             playNext();
@@ -84,7 +121,6 @@
 
         document.getElementById('answer-btn').onclick = () => {
             callAudio.pause();
-            // 詐欺師の速度を1.25倍に調整（スマホで聞き取りやすく）
             const msgs = ['あ、もしもし！？', 'ヤギだよ、ヤギ！', '来年の干支飾りに羊を作るって聞いたんだけど、', '羊と山羊の違いなんてみんなわかってないから、', 'ヤギに変えてくれよ！', '来年の干支がヤギになったって、バレっこないって！'];
             speakSequence(msgs, 1.25, 0.5, () => {
                 cutAudio.onended = () => showPlayerMonologue();
@@ -109,7 +145,6 @@
             buttons.forEach((btn, index) => {
                 const b = document.createElement('button');
                 b.textContent = btn.label;
-                // ボイスオーバー用に選択肢であることを明示
                 b.setAttribute('aria-label', `選択肢${index + 1}、${btn.label}`);
                 b.onclick = () => { vibrate(); btn.action(); };
                 container.appendChild(b);
@@ -161,11 +196,5 @@
         document.getElementById('choice1-btn').onclick = () => { vibrate(); endGame(); };
         document.getElementById('choice2-btn').onclick = () => { vibrate(); startInvestigation(); };
     </script>
-    <footer>
-        Thanks：<a href="https://soundeffect-lab.info/" target="_blank">効果音ラボ</a> ｜ 
-        <a href="https://otologic.jp/free/license.html" target="_blank">OtoLogic</a> ｜ 
-        <a href="https://sites.google.com/view/narihisa/" target="_blank">風兎窯</a><br>
-        (C) 2026 同行援護事業所みつき栃木 All Rights Reserved
-    </footer>
 </body>
 </html>
