@@ -59,8 +59,13 @@
         sirenAudio.volume = 0.3;
 
         function unlockAudio() {
-            callAudio.play().then(() => { callAudio.pause(); callAudio.currentTime = 0; }).catch(() => {});
-        }
+    [callAudio, cutAudio, sirenAudio].forEach(audio => {
+        audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+        }).catch(() => {});
+    });
+}
 
         function speakSequence(texts, rate = 1.0, pitch = 1.0, callback = null) {
             window.speechSynthesis.cancel();
