@@ -6,40 +6,14 @@
     <title>ヤギヤギ詐欺体験・完全版</title>
     <style>
         html, body { margin: 0; min-height: 100vh; background-color: #000; color: #fff; font-family: "Helvetica Neue", Arial, sans-serif; }
-        /* bodyをFlexboxにして、中身を縦に並べる */
-        body { 
-            text-align: center; 
-            padding: 20px 16px; 
-            display: flex; 
-            flex-direction: column; 
-            box-sizing: border-box; 
-            min-height: 100vh;
-        }
-
-        /* ここが重要：.screen（物語部分）が残りのスペースを自動で埋める */
-        .screen { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            width: 100%;
-        }
-
+        body { text-align: center; padding: 20px 16px; display: flex; flex-direction: column; box-sizing: border-box; min-height: 100vh; }
+        .screen { flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; }
         button { font-size: 1.2rem; padding: 16px; margin: 10px auto; width: min(100%, 520px); background-color: #222; color: #fff; border: 2px solid #fff; border-radius: 14px; cursor: pointer; touch-action: manipulation; }
         .hidden { display: none !important; }
         #info-text { white-space: pre-wrap; text-align: left; max-width: 760px; margin: 0 auto 20px; line-height: 1.6; }
         .button-group { display: flex; flex-direction: column; gap: 12px; align-items: center; }
-
-        /* フッターのスタイル */
-        footer {
-            margin-top: 40px;
-            padding: 20px 0;
-            font-size: 0.75rem;
-            color: #888;
-            flex-shrink: 0; /* フッターは縮まないようにする */
-        }
+        footer { margin-top: 40px; padding: 20px 0; font-size: 0.75rem; color: #888; flex-shrink: 0; }
         footer a { color: #aaa; text-decoration: none; }
-        footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -102,7 +76,7 @@
                 u.lang = 'ja-JP';
                 u.rate = rate;
                 u.pitch = pitch;
-                u.onend = () => { i++; setTimeout(playNext, 100); };
+                u.onend = () => { i++; setTimeout(playNext, 150); };
                 window.speechSynthesis.speak(u);
             }
             playNext();
@@ -122,9 +96,13 @@
         document.getElementById('answer-btn').onclick = () => {
             callAudio.pause();
             const msgs = ['あ、もしもし！？', 'ヤギだよ、ヤギ！', '来年の干支飾りに羊を作るって聞いたんだけど、', '羊と山羊の違いなんてみんなわかってないから、', 'ヤギに変えてくれよ！', '来年の干支がヤギになったって、バレっこないって！'];
+            
             speakSequence(msgs, 1.25, 0.5, () => {
-                cutAudio.onended = () => showPlayerMonologue();
-                cutAudio.play().catch(() => showPlayerMonologue());
+                // セリフ終了後、500ミリ秒待ってから切断音を鳴らす
+                setTimeout(() => {
+                    cutAudio.play();
+                    cutAudio.onended = () => showPlayerMonologue();
+                }, 500);
             });
         };
 
