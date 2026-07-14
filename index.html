@@ -58,11 +58,32 @@
         const sirenAudio = new Audio('audio/siren.mp3');
         sirenAudio.volume = 0.3;
 
-        // ★修正1: cutAudio と sirenAudio もここでアンロックする
-        // (callAudio だけをアンロックしても、他の Audio 要素は
-        //  iOS 側からは「別物」として扱われ、無音のまま再生ブロックされる)
+        // ★クイズ用の状態管理(バグ③: 元々どこにも宣言されていなかった)
+        // 実際の質問内容に差し替えてください。中身は仮のプレースホルダーです。
+        let currentQ = 0;
+        const quizzes = [
+            {
+                q: "【仮の問題1】次のうち、山羊の特徴はどれ？",
+                o: ["尻尾が下向き", "尻尾が上向き"],
+                a: 1
+            }
+            // 必要な数だけ { q, o, a } を追加してください
+        ];
+
+        // ★バグ②の修正: vibrate() がどこにも定義されておらず、
+        // 呼ばれるたびに ReferenceError で処理が止まっていた。
+        // iOS Safari は navigator.vibrate 自体を持たないため、存在確認してから呼ぶ。
+        function vibrate(pattern = 30) {
+            if (navigator.vibrate) navigator.vibrate(pattern);
+        }
+
+        // ★バグ①の修正: callAudio をここでアンロックすると、
+        // 直後に本物の再生をする callAudio.play() と競合し、
+        // 実機でいろいろな音が入り乱れる原因になっていた。
+        // cutAudio と sirenAudio は「後で」鳴らすものなので、ここで先に鳴らして止めておく。
+        // callAudio は start-btn クリックの中でこの直後に本当に再生するので含めない。
         function unlockAudio() {
-            [callAudio, cutAudio, sirenAudio].forEach(audio => {
+            [cutAudio, sirenAudio].forEach(audio => {
                 audio.play().then(() => {
                     audio.pause();
                     audio.currentTime = 0;
@@ -102,8 +123,6 @@
             const msgs = ['あ、もしもし！？', 'ヤギだよ、ヤギ！', '来年の干支飾りに羊を作るって聞いたんだけど、', '羊と山羊の違いなんてみんなわかってないから、', 'ヤギに変えてくれよ！', '来年の干支がヤギになったって、バレっこないって！'];
             speakSequence(msgs, 1.25, 0.5, () => {
                 setTimeout(() => {
-                    // ★修正2: onended を play() の前に登録し、
-                    // 再生に失敗しても必ず次へ進むようにする(保険のタイムアウト付き)
                     let proceeded = false;
                     const proceedOnce = () => {
                         if (proceeded) return;
@@ -117,7 +136,6 @@
                         proceedOnce();
                     });
 
-                    // 保険: 3秒経っても onended が発火しない場合は強制的に進む
                     setTimeout(proceedOnce, 3000);
                 }, 200);
             });
@@ -134,7 +152,7 @@
             document.getElementById('info-title').textContent = title;
             document.getElementById('info-text').textContent = text;
             if (autoSpeakTexts.length > 0) speakSequence(autoSpeakTexts);
-            
+
             const container = document.getElementById('button-container');
             container.innerHTML = '';
             buttons.forEach((btn, index) => {
@@ -174,7 +192,7 @@
         }
 
         function endGame() {
-            sirenAudio.play();
+            sirenAudio.play().catch(() => {});
             showInfo("通報中...", "通報だ！", [], ["通報だ！"]);
             setTimeout(() => {
                 sirenAudio.pause();
@@ -182,7 +200,7 @@
                 document.getElementById('info-title').textContent = "くやぎーーー";
                 document.getElementById('info-text').textContent = "";
                 speakSequence(["くやぎーーー"], 1.0, 0.3, () => {
-                    sirenAudio.play();
+                    sirenAudio.play().catch(() => {});
                     showInfo("一件落着！", "ヤギヤギ詐欺師は御用となりました。\nこれで正しい造形ができるね！", [{ label: "もう一度遊ぶ", action: () => location.reload() }], ["一件落着。ヤギヤギ詐欺師は御用となりました。"]);
                 });
             }, 3000);
