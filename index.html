@@ -58,23 +58,20 @@
         const sirenAudio = new Audio('audio/siren.mp3');
         sirenAudio.volume = 0.3;
 
-        // ★修正1: cutAudio と sirenAudio もここでアンロックする
-        // (callAudio だけをアンロックしても、他の Audio 要素は
-        //  iOS 側からは「別物」として扱われ、無音のまま再生ブロックされる)
-        function unlockAudio() {
-            [callAudio, cutAudio, sirenAudio].forEach(audio => {
-                audio.play().then(() => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                }).catch(() => {});
-            });
-        }
+        const quizzes = [
+            { q: "第1問：尻尾が下向きに垂れ下がっているのはどっち？", o: ["羊", "ヤギ"], a: 0 },
+            { q: "第2問：鼻筋が凹んだカーブを描いているのはどっち？", o: ["羊", "ヤギ"], a: 0 },
+            { q: "第3問：ツノがぐるぐると渦を巻いているのはどっち？", o: ["羊", "ヤギ"], a: 0 }
+        ];
+        let currentQ = 0;
+
+        function vibrate(ms = 100) { if (navigator.vibrate) navigator.vibrate(ms); }
 
         function speakSequence(texts, rate = 1.0, pitch = 1.0, callback = null) {
             window.speechSynthesis.cancel();
             let i = 0;
             function playNext() {
-                if (i >= texts.length) { if (callback) callback(); return; }
+                if (i >= texts.length) { if(callback) callback(); return; }
                 const u = new SpeechSynthesisUtterance(texts[i]);
                 u.lang = 'ja-JP';
                 u.rate = rate;
@@ -91,7 +88,6 @@
         }
 
         document.getElementById('start-btn').onclick = () => {
-            unlockAudio();
             showScreen('incoming');
             callAudio.loop = true;
             callAudio.play().catch(() => {});
@@ -100,26 +96,13 @@
         document.getElementById('answer-btn').onclick = () => {
             callAudio.pause();
             const msgs = ['あ、もしもし！？', 'ヤギだよ、ヤギ！', '来年の干支飾りに羊を作るって聞いたんだけど、', '羊と山羊の違いなんてみんなわかってないから、', 'ヤギに変えてくれよ！', '来年の干支がヤギになったって、バレっこないって！'];
+            
             speakSequence(msgs, 1.25, 0.5, () => {
+                // セリフ終了後、500ミリ秒待ってから切断音を鳴らす
                 setTimeout(() => {
-                    // ★修正2: onended を play() の前に登録し、
-                    // 再生に失敗しても必ず次へ進むようにする(保険のタイムアウト付き)
-                    let proceeded = false;
-                    const proceedOnce = () => {
-                        if (proceeded) return;
-                        proceeded = true;
-                        showPlayerMonologue();
-                    };
-
-                    cutAudio.onended = proceedOnce;
-                    cutAudio.play().catch(e => {
-                        console.log('cutAudio再生エラー:', e);
-                        proceedOnce();
-                    });
-
-                    // 保険: 3秒経っても onended が発火しない場合は強制的に進む
-                    setTimeout(proceedOnce, 3000);
-                }, 200);
+                    cutAudio.play();
+                    cutAudio.onended = () => showPlayerMonologue();
+                }, 500);
             });
         };
 
