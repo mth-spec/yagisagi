@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ヤギヤギ詐欺体験・完全版</title>
+    <style>
+        html, body { margin: 0; min-height: 100vh; background-color: #000; color: #fff; font-family: "Helvetica Neue", Arial, sans-serif; }
+        body { text-align: center; padding: 20px 16px; display: flex; flex-direction: column; box-sizing: border-box; }
+        button { font-size: 1.2rem; padding: 16px; margin: 10px auto; width: min(100%, 520px); background-color: #222; color: #fff; border: 2px solid #fff; border-radius: 14px; cursor: pointer; touch-action: manipulation; }
+        .screen { width: 100%; }
+        .hidden { display: none !important; }
+        #info-text { white-space: pre-wrap; text-align: left; max-width: 760px; margin: 0 auto 20px; line-height: 1.6; }
+        .button-group { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen" class="screen">
+        <h1>ヤギヤギ詐欺</h1>
+        <button id="start-btn">パンドラの箱を開ける</button>
+    </div>
+
+    <div id="incoming-screen" class="screen hidden">
+        <h1>非通知からの電話</h1>
+        <button id="answer-btn">応答する</button>
+    </div>
+
+    <div id="monologue-screen" class="screen hidden">
+        <h1>...通話終了</h1>
+        <p id="monologue-text"></p>
+        <div class="button-group">
+            <button id="choice1-btn">① 羊と山羊の違いはわかっている</button>
+            <button id="choice2-btn">② 羊と山羊の違い、実は微妙</button>
+        </div>
+    </div>
+
+    <div id="info-screen" class="screen hidden">
+        <h1 id="info-title"></h1>
+        <div id="info-text"></div>
+        <div id="button-container" class="button-group"></div>
+    </div>
+
+    <script>
+        const callAudio = new Audio('audio/audiocall.mp3');
+        const cutAudio = new Audio('audio/cut.mp3');
+        const sirenAudio = new Audio('audio/siren.mp3');
+        sirenAudio.volume = 0.3;
+
+        const quizzes = [
+            { q: "第1問：尻尾が下向きに垂れ下がっているのはどっち？", o: ["羊", "ヤギ"], a: 0 },
+            { q: "第2問：鼻筋が凹んだカーブを描いているのはどっち？", o: ["羊", "ヤギ"], a: 0 },
+            { q: "第3問：ツノがぐるぐると渦を巻いているのはどっち？", o: ["羊", "ヤギ"], a: 0 }
+        ];
+        let currentQ = 0;
+
+        function vibrate(ms = 100) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+        function speakSequence(texts, rate = 1.0, pitch = 1.0, callback = null) {
+            window.speechSynthesis.cancel();
+            let i = 0;
+            function playNext() {
+                if (i >= texts.length) { if(callback) callback(); return; }
+                const u = new SpeechSynthesisUtterance(texts[i]);
+                u.lang = 'ja-JP';
+                u.rate = rate;
+                u.pitch = pitch;
+                u.onend = () => { i++; setTimeout(playNext, 100); }; // セリフ間に少し間隔を置く
+                window.speechSynthesis.speak(u);
+            }
+            playNext();
+        }
+
+        function showScreen(name) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(name + '-screen').classList.remove('hidden');
+        }
+
+        document.getElementById('start-btn').onclick = () => {
+            showScreen('incoming');
+            callAudio.loop = true;
+            callAudio.play().catch(() => {});
+        };
+
+        document.getElementById('answer-btn').onclick = () => {
+            callAudio.pause();
+            // 詐欺師の速度を1.25倍に調整（スマホで聞き取りやすく）
+            const msgs = ['あ、もしもし！？', 'ヤギだよ、ヤギ！', '来年の干支飾りに羊を作るって聞いたんだけど、', '羊と山羊の違いなんてみんなわかってないから、', 'ヤギに変えてくれよ！', '来年の干支がヤギになったって、バレっこないって！'];
+            speakSequence(msgs, 1.25, 0.5, () => {
+                cutAudio.onended = () => showPlayerMonologue();
+                cutAudio.play().catch(() => showPlayerMonologue());
+            });
+        };
+
+        function showPlayerMonologue() {
+            const text = '（なんだ？ もしかして今のは話題のヤギヤギ詐欺からの電話か？羊と山羊の違いなんてみんなわからないって言ってたけど……あなたはどっち？）';
+            document.getElementById('monologue-text').textContent = text;
+            showScreen('monologue');
+            speakSequence(['なんだ？もしかして今のはヤギヤギ詐欺か？', '羊と山羊の違いなんてわからないって言ってたけど……あなたはどっち？', '選択肢です。1、羊と山羊の違いはわかっている。2、羊と山羊の違い、実は微妙。']);
+        }
+
+        function showInfo(title, text, buttons = [], autoSpeakTexts = []) {
+            document.getElementById('info-title').textContent = title;
+            document.getElementById('info-text').textContent = text;
+            if (autoSpeakTexts.length > 0) speakSequence(autoSpeakTexts);
+            
+            const container = document.getElementById('button-container');
+            container.innerHTML = '';
+            buttons.forEach((btn, index) => {
+                const b = document.createElement('button');
+                b.textContent = btn.label;
+                // ボイスオーバー用に選択肢であることを明示
+                b.setAttribute('aria-label', `選択肢${index + 1}、${btn.label}`);
+                b.onclick = () => { vibrate(); btn.action(); };
+                container.appendChild(b);
+            });
+            showScreen('info');
+        }
+
+        function startInvestigation() {
+            const body = "羊とヤギの違いを教えるよ。\n【羊】尻尾は下、鼻は凹む、ツノは渦巻き。\n【ヤギ】尻尾は上、鼻は直線的、ツノは三日月。\nオスはツノが太く、メスは華奢だよ。";
+            const bodySpeech = [
+                "羊とヤギの違いを教えるよ。",
+                "羊は、尻尾は下、鼻は凹む、ツノは渦巻き。",
+                "ヤギは、尻尾は上、鼻は直線的、ツノはみかずき。",
+                "オスはツノが太く、メスは華奢だよ。"
+            ];
+            showInfo("調査報告", body, [{ label: "クイズを始める", action: showQuiz }], bodySpeech);
+        }
+
+        function showQuiz() {
+            if (currentQ >= quizzes.length) { endGame(); return; }
+            const q = quizzes[currentQ];
+            speakSequence([q.q, "選択肢は、" + q.o.join("、または") + "です。"]);
+            const buttons = q.o.map((label, i) => ({
+                label: label,
+                action: () => {
+                    const isCorrect = (i === q.a);
+                    speakSequence([isCorrect ? "正解！" : "残念！"], 1.0, 1.0, showQuiz);
+                    currentQ++;
+                }
+            }));
+            showInfo("判定クイズ", q.q, buttons, []);
+        }
+
+        function endGame() {
+            sirenAudio.play();
+            showInfo("通報中...", "通報だ！", [], ["通報だ！"]);
+            setTimeout(() => {
+                sirenAudio.pause();
+                sirenAudio.currentTime = 0;
+                document.getElementById('info-title').textContent = "くやぎーーー";
+                document.getElementById('info-text').textContent = "";
+                speakSequence(["くやぎーーー"], 1.0, 0.3, () => {
+                    sirenAudio.play();
+                    showInfo("一件落着！", "ヤギヤギ詐欺師は御用となりました。\nこれで正しい造形ができるね！", [{ label: "もう一度遊ぶ", action: () => location.reload() }], ["一件落着。ヤギヤギ詐欺師は御用となりました。"]);
+                });
+            }, 3000);
+        }
+
+        document.getElementById('choice1-btn').onclick = () => { vibrate(); endGame(); };
+        document.getElementById('choice2-btn').onclick = () => { vibrate(); startInvestigation(); };
+    </script>
+</body>
+</html>
