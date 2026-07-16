@@ -3,21 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ヤギヤギ詐欺体験</title>
+    <title>ヤギヤギ詐欺体験・完全版</title>
     <style>
         html, body { margin: 0; min-height: 100vh; background-color: #000; color: #fff; font-family: "Helvetica Neue", Arial, sans-serif; }
-        body { text-align: center; padding: 20px 16px; display: flex; flex-direction: column; box-sizing: border-box; min-height: 100vh; }
-        .screen { flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; }
+        /* bodyをFlexboxにして、中身を縦に並べる */
+        body { 
+            text-align: center; 
+            padding: 20px 16px; 
+            display: flex; 
+            flex-direction: column; 
+            box-sizing: border-box; 
+            min-height: 100vh;
+        }
+
+ 
+        .screen { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            width: 100%;
+        }
+
         button { font-size: 1.2rem; padding: 16px; margin: 10px auto; width: min(100%, 520px); background-color: #222; color: #fff; border: 2px solid #fff; border-radius: 14px; cursor: pointer; touch-action: manipulation; }
         .hidden { display: none !important; }
         #info-text { white-space: pre-wrap; text-align: left; max-width: 760px; margin: 0 auto 20px; line-height: 1.6; }
         .button-group { display: flex; flex-direction: column; gap: 12px; align-items: center; }
-        footer { margin-top: 40px; padding: 20px 0; font-size: 0.75rem; color: #888; flex-shrink: 0; }
+
+        /* フッターのスタイル */
+        footer {
+            margin-top: 40px;
+            padding: 20px 0;
+            font-size: 0.75rem;
+            color: #888;
+            flex-shrink: 0; /* フッターは縮まないようにする */
+        }
         footer a { color: #aaa; text-decoration: none; }
-        /* 再開オーバーレイ */
-        #resume-overlay { position: fixed; left: 0; top: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index: 9999; }
-        #resume-overlay.hidden { display: none; }
-        #resume-overlay button { font-size: 1.1rem; padding: 14px 20px; border-radius: 12px; border: 2px solid #fff; background: #222; color: #fff; }
+        footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -56,14 +78,10 @@
         (C) 2026 同行援護事業所みつき栃木 All Rights Reserved
     </footer>
 
-    <div id="resume-overlay" class="hidden">
-        <button id="resume-btn">画面をタップして再開</button>
-    </div>
-
     <script>
         const callAudio = new Audio('audio/audiocall.mp3');
+        const cutAudio = new Audio('audio/cut.mp3');
         const sirenAudio = new Audio('audio/siren.mp3');
-        callAudio.loop = true;
         sirenAudio.volume = 0.3;
 
         const quizzes = [
@@ -72,6 +90,8 @@
             { q: "第3問：ツノがぐるぐると渦を巻いているのはどっち？", o: ["羊", "ヤギ"], a: 0 }
         ];
         let currentQ = 0;
+
+        function vibrate(ms = 100) { if (navigator.vibrate) navigator.vibrate(ms); }
 
         function speakSequence(texts, rate = 1.0, pitch = 1.0, callback = null) {
             window.speechSynthesis.cancel();
@@ -82,7 +102,7 @@
                 u.lang = 'ja-JP';
                 u.rate = rate;
                 u.pitch = pitch;
-                u.onend = () => { i++; setTimeout(playNext, 150); };
+                u.onend = () => { i++; setTimeout(playNext, 100); };
                 window.speechSynthesis.speak(u);
             }
             playNext();
@@ -95,22 +115,16 @@
 
         document.getElementById('start-btn').onclick = () => {
             showScreen('incoming');
+            callAudio.loop = true;
             callAudio.play().catch(() => {});
         };
 
         document.getElementById('answer-btn').onclick = () => {
             callAudio.pause();
-            const msgs = ['あ、もしもし！？', 'ヤギだよ、ヤギ！', '来年の干支飾りに羊を作るって聞いたんだけど、', '羊と山羊の違いなんてみんなわかってないから、', 'ヤギに変えてくれよ！', '来年の干支がヤギになったって、バレっこないって！'];
-            
+            const msgs = ['あ、もしもし！？', 'ヤギだよ、ヤギ！', '来年の干支飾りに羊を作るって聞いたんだけど、', '羊と山羊の違いなんてみんなわかってないから、', 'ヤギに変えてくれよ！', '来年の干支がヤギになったって、バレっこないって！じゃあな！'];
             speakSequence(msgs, 1.25, 0.5, () => {
-                setTimeout(() => {
-                    const u = new SpeechSynthesisUtterance('ぷつっ、つーつー');
-                    u.lang = 'ja-JP';
-                    u.rate = 1.0;
-                    u.pitch = 0.9;
-                    u.onend = () => showPlayerMonologue();
-                    window.speechSynthesis.speak(u);
-                }, 500);
+                cutAudio.onended = () => showPlayerMonologue();
+                cutAudio.play().catch(() => showPlayerMonologue());
             });
         };
 
@@ -118,7 +132,7 @@
             const text = '（なんだ？ もしかして今のは話題のヤギヤギ詐欺からの電話か？羊と山羊の違いなんてみんなわからないって言ってたけど……あなたはどっち？）';
             document.getElementById('monologue-text').textContent = text;
             showScreen('monologue');
-            speakSequence(['なんだ？もしかして今のはヤギヤギ詐欺か？', '羊と山羊の違いなんてわからないって言ってたけど……あなたはどっち？', '1、羊と山羊の違いはわかっている。2、羊と山羊の違い、実は微妙。']);
+            speakSequence(['なんだ？もしかして今のはヤギヤギ詐欺か？', '羊と山羊の違いなんてわからないって言ってたけど……あなたはどっち？', '選択肢です。1、羊と山羊の違いはわかっている。2、羊と山羊の違い、実は微妙。']);
         }
 
         function showInfo(title, text, buttons = [], autoSpeakTexts = []) {
@@ -128,10 +142,11 @@
             
             const container = document.getElementById('button-container');
             container.innerHTML = '';
-            buttons.forEach(btn => {
+            buttons.forEach((btn, index) => {
                 const b = document.createElement('button');
                 b.textContent = btn.label;
-                b.onclick = btn.action;
+                b.setAttribute('aria-label', `選択肢${index + 1}、${btn.label}`);
+                b.onclick = () => { vibrate(); btn.action(); };
                 container.appendChild(b);
             });
             showScreen('info');
@@ -160,7 +175,7 @@
                     currentQ++;
                 }
             }));
-            showInfo("羊クイズ", q.q, buttons, []);
+            showInfo("判定クイズ", q.q, buttons, []);
         }
 
         function endGame() {
@@ -178,44 +193,8 @@
             }, 3000);
         }
 
-        document.getElementById('choice1-btn').onclick = () => { endGame(); };
-        document.getElementById('choice2-btn').onclick = () => { startInvestigation(); };
-
-        // --- モバイルで通話などによりオーディオが中断された後の再開対策 ---
-        let audioPlayingState = { call: false, siren: false };
-        let speechWasSpeaking = false;
-
-        function showResumeOverlay() {
-            document.getElementById('resume-overlay').classList.remove('hidden');
-            document.getElementById('resume-btn').focus();
-        }
-        function hideResumeOverlay() {
-            document.getElementById('resume-overlay').classList.add('hidden');
-        }
-
-        function tryResumeAll() {
-            try { if (audioPlayingState.call && callAudio.paused) callAudio.play().catch(()=>{}); } catch(e){}
-            try { if (audioPlayingState.siren && sirenAudio.paused) sirenAudio.play().catch(()=>{}); } catch(e){}
-            try { if (speechWasSpeaking) { try { speechSynthesis.resume(); } catch(e){} } } catch(e){}
-            audioPlayingState = { call: false, siren: false };
-            speechWasSpeaking = false;
-        }
-
-        document.getElementById('resume-btn').addEventListener('click', () => {
-            hideResumeOverlay();
-            tryResumeAll();
-        });
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                audioPlayingState.call = !callAudio.paused;
-                audioPlayingState.siren = !sirenAudio.paused;
-                speechWasSpeaking = speechSynthesis.speaking;
-            } else {
-                const needResume = (audioPlayingState.call && callAudio.paused) || (audioPlayingState.siren && sirenAudio.paused) || speechWasSpeaking;
-                if (needResume) showResumeOverlay();
-            }
-        });
+        document.getElementById('choice1-btn').onclick = () => { vibrate(); endGame(); };
+        document.getElementById('choice2-btn').onclick = () => { vibrate(); startInvestigation(); };
     </script>
 </body>
 </html>
