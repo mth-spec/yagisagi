@@ -14,6 +14,10 @@
         .button-group { display: flex; flex-direction: column; gap: 12px; align-items: center; }
         footer { margin-top: 40px; padding: 20px 0; font-size: 0.75rem; color: #888; flex-shrink: 0; }
         footer a { color: #aaa; text-decoration: none; }
+        /* 再開オーバーレイ */
+        #resume-overlay { position: fixed; left: 0; top: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index: 9999; }
+        #resume-overlay.hidden { display: none; }
+        #resume-overlay button { font-size: 1.1rem; padding: 14px 20px; border-radius: 12px; border: 2px solid #fff; background: #222; color: #fff; }
     </style>
 </head>
 <body>
@@ -52,9 +56,12 @@
         (C) 2026 同行援護事業所みつき栃木 All Rights Reserved
     </footer>
 
+    <div id="resume-overlay" class="hidden">
+        <button id="resume-btn">画面をタップして再開</button>
+    </div>
+
     <script>
         const callAudio = new Audio('audio/audiocall.mp3');
-        const cutAudio = new Audio('audio/cut.mp3');
         const sirenAudio = new Audio('audio/siren.mp3');
         callAudio.loop = true;
         sirenAudio.volume = 0.3;
@@ -97,8 +104,12 @@
             
             speakSequence(msgs, 1.25, 0.5, () => {
                 setTimeout(() => {
-                    cutAudio.play();
-                    cutAudio.onended = () => showPlayerMonologue();
+                    const u = new SpeechSynthesisUtterance('ぷつっ、つーつー');
+                    u.lang = 'ja-JP';
+                    u.rate = 1.0;
+                    u.pitch = 0.9;
+                    u.onend = () => showPlayerMonologue();
+                    window.speechSynthesis.speak(u);
                 }, 500);
             });
         };
@@ -169,6 +180,42 @@
 
         document.getElementById('choice1-btn').onclick = () => { endGame(); };
         document.getElementById('choice2-btn').onclick = () => { startInvestigation(); };
+
+        // --- モバイルで通話などによりオーディオが中断された後の再開対策 ---
+        let audioPlayingState = { call: false, siren: false };
+        let speechWasSpeaking = false;
+
+        function showResumeOverlay() {
+            document.getElementById('resume-overlay').classList.remove('hidden');
+            document.getElementById('resume-btn').focus();
+        }
+        function hideResumeOverlay() {
+            document.getElementById('resume-overlay').classList.add('hidden');
+        }
+
+        function tryResumeAll() {
+            try { if (audioPlayingState.call && callAudio.paused) callAudio.play().catch(()=>{}); } catch(e){}
+            try { if (audioPlayingState.siren && sirenAudio.paused) sirenAudio.play().catch(()=>{}); } catch(e){}
+            try { if (speechWasSpeaking) { try { speechSynthesis.resume(); } catch(e){} } } catch(e){}
+            audioPlayingState = { call: false, siren: false };
+            speechWasSpeaking = false;
+        }
+
+        document.getElementById('resume-btn').addEventListener('click', () => {
+            hideResumeOverlay();
+            tryResumeAll();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                audioPlayingState.call = !callAudio.paused;
+                audioPlayingState.siren = !sirenAudio.paused;
+                speechWasSpeaking = speechSynthesis.speaking;
+            } else {
+                const needResume = (audioPlayingState.call && callAudio.paused) || (audioPlayingState.siren && sirenAudio.paused) || speechWasSpeaking;
+                if (needResume) showResumeOverlay();
+            }
+        });
     </script>
 </body>
 </html>
