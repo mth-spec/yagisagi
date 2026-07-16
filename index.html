@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ヤギヤギ詐欺体験・完全版</title>
+    <title>ヤギヤギ詐欺体験</title>
     <style>
         html, body { margin: 0; min-height: 100vh; background-color: #000; color: #fff; font-family: "Helvetica Neue", Arial, sans-serif; }
-        /* bodyをFlexboxにして、中身を縦に並べる */
+        
         body { 
             text-align: center; 
             padding: 20px 16px; 
@@ -30,13 +30,13 @@
         #info-text { white-space: pre-wrap; text-align: left; max-width: 760px; margin: 0 auto 20px; line-height: 1.6; }
         .button-group { display: flex; flex-direction: column; gap: 12px; align-items: center; }
 
-        /* フッターのスタイル */
+        
         footer {
             margin-top: 40px;
             padding: 20px 0;
             font-size: 0.75rem;
             color: #888;
-            flex-shrink: 0; /* フッターは縮まないようにする */
+            flex-shrink: 0; 
         }
         footer a { color: #aaa; text-decoration: none; }
         footer a:hover { text-decoration: underline; }
@@ -129,10 +129,10 @@
         };
 
         function showPlayerMonologue() {
-            const text = '（なんだ？ もしかして今のは話題のヤギヤギ詐欺からの電話か？羊と山羊の違いなんてみんなわからないって言ってたけど……あなたはどっち？）';
+            const text = '（なんだ？ もしかして今話題のヤギヤギ詐欺からの電話か？羊と山羊の違いなんてみんなわからないって言ってたけど……あなたはどっち？）';
             document.getElementById('monologue-text').textContent = text;
             showScreen('monologue');
-            speakSequence(['なんだ？もしかして今のはヤギヤギ詐欺か？', '羊と山羊の違いなんてわからないって言ってたけど……あなたはどっち？', '選択肢です。1、羊と山羊の違いはわかっている。2、羊と山羊の違い、実は微妙。']);
+            speakSequence(['なんだ？もしかして今のはヤギヤギ詐欺か？', '羊と山羊の違いなんてわからないって言ってたけど……あなたはどっち？', '1、羊と山羊の違いはわかっている。2、羊と山羊の違い、実は微妙。']);
         }
 
         function showInfo(title, text, buttons = [], autoSpeakTexts = []) {
@@ -153,12 +153,12 @@
         }
 
         function startInvestigation() {
-            const body = "羊とヤギの違いを教えるよ。\n【羊】尻尾は下、鼻は凹む、ツノは渦巻き。\n【ヤギ】尻尾は上、鼻は直線的、ツノは三日月。\nオスはツノが太く、メスは華奢だよ。";
+            const body = "羊とヤギの違いを教えるよ。\n【羊】尻尾は下、鼻は凹む、ツノは渦巻き。\n【ヤギ】尻尾は上、鼻は直線的、ツノは三日月。\n羊もヤギも、オスはツノが太く、メスは華奢だよ。";
             const bodySpeech = [
                 "羊とヤギの違いを教えるよ。",
                 "羊は、尻尾は下、鼻は凹む、ツノは渦巻き。",
                 "ヤギは、尻尾は上、鼻は直線的、ツノはみかずき。",
-                "オスはツノが太く、メスは華奢だよ。"
+                "羊もヤギも、オスはツノが太く、メスは華奢だよ。"
             ];
             showInfo("調査報告", body, [{ label: "クイズを始める", action: showQuiz }], bodySpeech);
         }
